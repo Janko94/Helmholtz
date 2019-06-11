@@ -1,0 +1,152 @@
+﻿<#@ assembly name="EnvDTE" #> 
+<#@ import namespace="EnvDTE" #>
+<#@ assembly name="Microsoft.VisualStudio.Shell.11.0" #>
+<#@ assembly name="Microsoft.VisualStudio.Shell.Interop" #>
+<#@ import namespace="Microsoft.VisualStudio.Shell" #>
+<#@ import namespace="Microsoft.VisualStudio.Shell.Interop" #>
+<#@ template debug="true" hostSpecific="true" language="C#" #>
+<#@ output extension=".cs" #>
+<#@ Assembly Name="System.Core" #>
+<#@ Assembly Name="System.Windows.Forms" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Diagnostics" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Collections" #>
+<#@ import namespace="System.Collections.Generic" #> 
+<#@ include file="Manager.ttinclude" #>
+
+<#
+	List<string> AllCodes = new List<string>()
+	{
+		"PrivateLabel", "CostUnit", "CostCenter"
+	};
+#>
+
+<# var manager = new Manager(Host, GenerationEnvironment, true) { OutputPath = string.Format("{0}/{1}", Path.GetDirectoryName(Host.TemplateFile), "DtoAndMapper") }; #>
+
+<# foreach (var ClassName in AllCodes)
+   {
+		 #>
+
+<# manager.StartBlock(string.Format("{0}DtoConfiguration.cs", ClassName)); #>
+using Api.Client.Model;
+using Api.Configuration.Dto.CodeBooks;
+using FluentValidation.Results;
+using JsonApiFramework.ServiceModel.Configuration;
+
+namespace Api.Client.Configurations
+{
+    public class <#= ClassName #>DtoConfiguration : ResourceTypeBuilder<<#= ClassName #>DTO>
+    {
+        public <#= ClassName #>DtoConfiguration()
+        {
+            // .. Hypermedia
+            this.Hypermedia().SetApiCollectionPathSegment(KeywordsDictionary.<#= ClassName #>s);
+
+            // .. ResourceIdentity
+            this.ResourceIdentity(x => x.auid).SetApiType("<#= ClassName #>");
+
+
+            /*************GENERATED CODE*****************/
+
+            /********************************************/
+
+        }
+
+
+    }
+}
+
+<# manager.EndBlock(); #>
+
+
+
+
+
+<# manager.StartBlock(string.Format("{0}DtoDocumentContext.cs", ClassName)); #>
+using Api.Client.Configurations;
+using Api.Client.Model;
+using Api.Client.Model.HomeDocument;
+using FluentValidation.Results;
+using JsonApiFramework;
+using JsonApiFramework.Http;
+using JsonApiFramework.JsonApi;
+using JsonApiFramework.Server;
+using JsonApiFramework.ServiceModel.Configuration;
+using System;
+
+namespace Api.Client
+{
+    public class <#= ClassName #>DtoDocumentContext : DocumentContext
+    {
+        private static readonly UrlBuilderConfiguration UrlBuilderConfiguration = new UrlBuilderConfiguration("https", "api.tieto.gateway.com");
+
+        public <#= ClassName #>DtoDocumentContext() { }
+        public <#= ClassName #>DtoDocumentContext(Document apiDocument) : base(apiDocument) { }
+
+        protected override void OnConfiguring(IDocumentContextOptionsBuilder optionsBuilder)
+        {
+            base.OnConfiguring(optionsBuilder);
+
+            optionsBuilder.UseUrlBuilderConfiguration(UrlBuilderConfiguration);
+
+            var configurationFactory = new ConfigurationFactory(optionsBuilder);
+        }
+    }
+}
+
+<# manager.EndBlock(); #>
+
+
+
+
+<# manager.StartBlock(string.Format("{0}DTO.cs", ClassName)); #>
+using System;
+
+namespace Api.Configuration.Dto.CodeBooks
+{
+    public class <#= ClassName #>DTO
+    {
+    }
+}
+<# manager.EndBlock(); #>
+
+<#
+   }#>
+
+
+
+<# manager.StartBlock(string.Format("UPDATES.cs")); #>
+//keywords dictionary
+<# foreach (var ClassName in AllCodes)
+   {
+	#>
+public const string <#= ClassName #>s = "<#= ClassName #>s";
+<#
+   }#>
+//ConfigurationFactory
+<# foreach (var ClassName in AllCodes)
+   {
+	#>
+serviceModelBuilder.Configurations.Add(new <#= ClassName #>DtoConfiguration());
+<#
+   }#>
+
+ //GenericDocument
+<# foreach (var ClassName in AllCodes)
+   {
+	#>
+{ typeof(<#= ClassName #>DtoDocumentContext), () => doc = new <#= ClassName #>DtoDocumentContext() }
+<#
+   }#>
+<# manager.EndBlock(); #>
+
+
+
+<# manager.Process(true); #>
+
+
+
+
+
